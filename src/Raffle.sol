@@ -34,7 +34,7 @@ contract Raffle is VRFConsumerBaseV2Plus, AutomationCompatibleInterface {
     uint256 private immutable i_interval;
     bytes32 private immutable i_keyHash;
     uint256 private immutable i_subscriptionId;
-    address payable[] private s_players;
+    address payable[] private s_players; //an array to store players
     uint256 private s_lastTimeStamp;
     address payable private s_recentWinner;
     RaffleState private s_raffleState;
