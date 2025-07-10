@@ -1,9 +1,9 @@
 // SPDX-License-Identifier: MIT
-pragma solidity ^0.8.8;
+pragma solidity ^0.8.30;
 
-import { VRFConsumerBaseV2Plus } from "@chainlink/contracts/contracts/src/v0.8/vrf/dev/VRFConsumerBaseV2Plus.sol";
-import { VRFV2PlusClient } from "@chainlink/contracts/contracts/src/v0.8/vrf/dev/libraries/VRFV2PlusClient.sol";
-import { AutomationCompatibleInterface } from "@chainlink/contracts/contracts/src/v0.8/automation/interfaces/AutomationCompatibleInterface.sol";
+import { VRFConsumerBaseV2Plus } from "@chainlink/contracts/src/v0.8/vrf/dev/VRFConsumerBaseV2Plus.sol";
+import { VRFV2PlusClient } from "@chainlink/contracts/src/v0.8/vrf/dev/libraries/VRFV2PlusClient.sol";
+import { AutomationCompatibleInterface } from "@chainlink/contracts/src/v0.8/automation/interfaces/AutomationCompatibleInterface.sol";
 
 /**
  * @title A sample Raffle Contract
@@ -18,7 +18,7 @@ contract Raffle is VRFConsumerBaseV2Plus, AutomationCompatibleInterface {
     error Raffle__TransferFailed();
     error Raffle__NotEnoughPlayersToPlay();
     error Raffle__CantEnterInCalcPhase();
-    error Raffle__UpkeepConditionUnsatisfied(uint256 contractBalance, uint8 raffleState, uint256 numberOfPlayers);
+    error Raffle__UpkeepConditionUnsatisfied(uint256 contractBalance, RaffleState raffleState, uint256 numberOfPlayers);
 
     /** Type Declarations */
     enum RaffleState {
@@ -43,6 +43,7 @@ contract Raffle is VRFConsumerBaseV2Plus, AutomationCompatibleInterface {
     /** Events */
     event RaffleEntry(address indexed player);
     event WinnerSelected(address payable indexed winner);
+    event RequestedRaffleWinner(uint256 indexed requestId);
 
     /** Functions */
     constructor(
@@ -73,6 +74,7 @@ contract Raffle is VRFConsumerBaseV2Plus, AutomationCompatibleInterface {
         emit RaffleEntry(msg.sender);
     }
 
+    //CEI: Checks, Effects, Interactions Pattern
     function fulfillRandomWords(
         uint256 requestId,
         uint256[] calldata randomWords
@@ -122,7 +124,7 @@ contract Raffle is VRFConsumerBaseV2Plus, AutomationCompatibleInterface {
     function performUpkeep(bytes calldata /* performData */) external override {
         (bool success,) = checkUpkeep('');
         if (!success) {
-            revert Raffle__UpkeepConditionUnsatisfied(address(this).balance, uint8(s_raffleState), s_players.length);
+            revert Raffle__UpkeepConditionUnsatisfied(address(this).balance, s_raffleState, s_players.length);
         }
 
         //changing the state of the raffle
@@ -141,6 +143,7 @@ contract Raffle is VRFConsumerBaseV2Plus, AutomationCompatibleInterface {
                 )
             })
         );
+        emit RequestedRaffleWinner(requestId);
         s_requestIdToPlayers[requestId] = s_players;
     }
 
