@@ -1,9 +1,10 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.30;
 
-import { VRFConsumerBaseV2Plus } from "@chainlink/contracts/src/v0.8/vrf/dev/VRFConsumerBaseV2Plus.sol";
-import { VRFV2PlusClient } from "@chainlink/contracts/src/v0.8/vrf/dev/libraries/VRFV2PlusClient.sol";
-import { AutomationCompatibleInterface } from "@chainlink/contracts/src/v0.8/automation/interfaces/AutomationCompatibleInterface.sol";
+import {VRFConsumerBaseV2Plus} from "@chainlink/contracts/src/v0.8/vrf/dev/VRFConsumerBaseV2Plus.sol";
+import {VRFV2PlusClient} from "@chainlink/contracts/src/v0.8/vrf/dev/libraries/VRFV2PlusClient.sol";
+import {AutomationCompatibleInterface} from
+    "@chainlink/contracts/src/v0.8/automation/interfaces/AutomationCompatibleInterface.sol";
 
 /**
  * @title A sample Raffle Contract
@@ -12,7 +13,9 @@ import { AutomationCompatibleInterface } from "@chainlink/contracts/src/v0.8/aut
  * @dev Implements Chainlink VRF V2.5 and Custom Logic Automation
  */
 contract Raffle is VRFConsumerBaseV2Plus, AutomationCompatibleInterface {
-    /** Errors */
+    /**
+     * Errors
+     */
     error Raffle__NotEnoughETH();
     error Raffle__NotEnoughTimePassed();
     error Raffle__TransferFailed();
@@ -20,13 +23,17 @@ contract Raffle is VRFConsumerBaseV2Plus, AutomationCompatibleInterface {
     error Raffle__CantEnterInCalcPhase();
     error Raffle__UpkeepConditionUnsatisfied(uint256 contractBalance, RaffleState raffleState, uint256 numberOfPlayers);
 
-    /** Type Declarations */
+    /**
+     * Type Declarations
+     */
     enum RaffleState {
         OPEN,
         CALCULATING
     }
-    
-    /** State Variables */
+
+    /**
+     * State Variables
+     */
     uint16 private constant REQUEST_CONFIRMATIONS = 3;
     uint16 private constant NUM_WORDS = 1;
     uint32 private immutable i_callbackGasLimit;
@@ -40,12 +47,16 @@ contract Raffle is VRFConsumerBaseV2Plus, AutomationCompatibleInterface {
     RaffleState private s_raffleState;
     mapping(uint256 => address payable[]) private s_requestIdToPlayers;
 
-    /** Events */
+    /**
+     * Events
+     */
     event RaffleEntry(address indexed player);
     event WinnerSelected(address payable indexed winner);
     event RequestedRaffleWinner(uint256 indexed requestId);
 
-    /** Functions */
+    /**
+     * Functions
+     */
     constructor(
         uint256 entranceFee,
         uint256 interval,
@@ -75,10 +86,7 @@ contract Raffle is VRFConsumerBaseV2Plus, AutomationCompatibleInterface {
     }
 
     //CEI: Checks, Effects, Interactions Pattern
-    function fulfillRandomWords(
-        uint256 requestId,
-        uint256[] calldata randomWords
-    ) internal override {
+    function fulfillRandomWords(uint256 requestId, uint256[] calldata randomWords) internal override {
         //restore the array of players from the mapping
         address payable[] memory m_players = s_requestIdToPlayers[requestId];
         if (m_players.length == 0) {
@@ -90,9 +98,7 @@ contract Raffle is VRFConsumerBaseV2Plus, AutomationCompatibleInterface {
         s_recentWinner = m_players[indexOfWinner];
 
         //send the contract balance to the winner
-        (bool success, ) = s_recentWinner.call{value: address(this).balance}(
-            ""
-        );
+        (bool success,) = s_recentWinner.call{value: address(this).balance}("");
         if (!success) {
             revert Raffle__TransferFailed();
         }
@@ -110,19 +116,22 @@ contract Raffle is VRFConsumerBaseV2Plus, AutomationCompatibleInterface {
      * @dev this function is used by automation service to check trigger conditions
      * @return upkeepNeeded
      */
-    function checkUpkeep(
-        bytes memory /* checkData */
-    ) public view override returns (bool upkeepNeeded, bytes memory /* performData */) {
+    function checkUpkeep(bytes memory /* checkData */ )
+        public
+        view
+        override
+        returns (bool upkeepNeeded, bytes memory /* performData */ )
+    {
         bool timeHasPassed = (block.timestamp - s_lastTimeStamp) >= i_interval;
         bool isOpen = s_raffleState == RaffleState.OPEN;
         bool hasBalance = address(this).balance > 0;
         bool hasPlayers = s_players.length > 0;
         upkeepNeeded = timeHasPassed && isOpen && hasBalance && hasPlayers;
-        return (upkeepNeeded ,"");
+        return (upkeepNeeded, "");
     }
 
-    function performUpkeep(bytes calldata /* performData */) external override {
-        (bool success,) = checkUpkeep('');
+    function performUpkeep(bytes calldata /* performData */ ) external override {
+        (bool success,) = checkUpkeep("");
         if (!success) {
             revert Raffle__UpkeepConditionUnsatisfied(address(this).balance, s_raffleState, s_players.length);
         }
@@ -138,28 +147,28 @@ contract Raffle is VRFConsumerBaseV2Plus, AutomationCompatibleInterface {
                 requestConfirmations: REQUEST_CONFIRMATIONS,
                 callbackGasLimit: i_callbackGasLimit,
                 numWords: NUM_WORDS,
-                extraArgs: VRFV2PlusClient._argsToBytes(
-                    VRFV2PlusClient.ExtraArgsV1({nativePayment: false})
-                )
+                extraArgs: VRFV2PlusClient._argsToBytes(VRFV2PlusClient.ExtraArgsV1({nativePayment: false}))
             })
         );
         emit RequestedRaffleWinner(requestId);
         s_requestIdToPlayers[requestId] = s_players;
     }
 
-    /** Getter Functions */
+    /**
+     * Getter Functions
+     */
     function getEntranceFee() external view returns (uint256) {
         return i_entranceFee;
     }
-    
+
     function getInterval() external view returns (uint256) {
         return i_interval;
     }
-    
+
     function getKeyHash() external view returns (bytes32) {
         return i_keyHash;
     }
-    
+
     function getLastTimeStamp() external view returns (uint256) {
         return s_lastTimeStamp;
     }
@@ -167,7 +176,7 @@ contract Raffle is VRFConsumerBaseV2Plus, AutomationCompatibleInterface {
     function getRecentWinner() external view returns (address payable) {
         return s_recentWinner;
     }
-    
+
     function getPlayerById(uint256 id) external view returns (address payable) {
         return s_players[id];
     }

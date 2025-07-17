@@ -1,12 +1,12 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.30;
 
-import { Test } from "forge-std/Test.sol";
-import { Raffle } from "../../src/Raffle.sol";
-import { RaffleScript } from "../../script/Raffle.s.sol";
-import { HelperConfig } from "../../script/HelperConfig.s.sol";
-import { Vm } from "forge-std/Vm.sol";
-import { VRFCoordinatorV2_5Mock } from "@chainlink/contracts/src/v0.8/vrf/mocks/VRFCoordinatorV2_5Mock.sol";
+import {Test} from "forge-std/Test.sol";
+import {Raffle} from "../../src/Raffle.sol";
+import {RaffleScript} from "../../script/Raffle.s.sol";
+import {HelperConfig} from "../../script/HelperConfig.s.sol";
+import {Vm} from "forge-std/Vm.sol";
+import {VRFCoordinatorV2_5Mock} from "@chainlink/contracts/src/v0.8/vrf/mocks/VRFCoordinatorV2_5Mock.sol";
 
 contract RaffleTest is Test {
     Raffle public raffle;
@@ -23,7 +23,9 @@ contract RaffleTest is Test {
     uint256 subscriptionId;
     uint32 callbackGasLimit;
 
-    /** Events */
+    /**
+     * Events
+     */
     event RaffleEntry(address indexed player);
     event WinnerSelected(address payable indexed winner);
 
@@ -49,7 +51,7 @@ contract RaffleTest is Test {
     }
 
     modifier skipFork() {
-        if(block.chainid != LOCAL_CHAIN_ID) {
+        if (block.chainid != LOCAL_CHAIN_ID) {
             return;
         }
         _;
@@ -66,7 +68,7 @@ contract RaffleTest is Test {
     function testRaffleRevertWhenYouDontPayEnough() public {
         vm.prank(PLAYER);
         vm.expectRevert(Raffle.Raffle__NotEnoughETH.selector);
-        raffle.enterRaffle();   
+        raffle.enterRaffle();
     }
 
     function testRaffleRecordsPlayersWhenTheyEnter() public {
@@ -99,7 +101,7 @@ contract RaffleTest is Test {
         vm.warp(block.timestamp + interval + 1);
         vm.roll(block.number + 1);
 
-        (bool upKeepNeeded, ) = raffle.checkUpkeep("");
+        (bool upKeepNeeded,) = raffle.checkUpkeep("");
         assert(!upKeepNeeded);
     }
 
@@ -110,7 +112,7 @@ contract RaffleTest is Test {
         vm.roll(block.number + 1);
         raffle.performUpkeep("");
 
-        (bool upKeepNeeded, ) = raffle.checkUpkeep("");
+        (bool upKeepNeeded,) = raffle.checkUpkeep("");
         assert(!upKeepNeeded);
     }
 
@@ -132,10 +134,7 @@ contract RaffleTest is Test {
 
         vm.expectRevert(
             abi.encodeWithSelector(
-                Raffle.Raffle__UpkeepConditionUnsatisfied.selector,
-                currentBalance,
-                rState,
-                numPlayers
+                Raffle.Raffle__UpkeepConditionUnsatisfied.selector, currentBalance, rState, numPlayers
             )
         );
         raffle.performUpkeep("");
@@ -156,7 +155,11 @@ contract RaffleTest is Test {
                          FULLFILL RANDOM WORDS
     //////////////////////////////////////////////////////////////*/
 
-    function testFullfillRandomWordsCanOnlyBeCalledAfterPerform(uint256 randomRequestId) public raffleEntered skipFork {
+    function testFullfillRandomWordsCanOnlyBeCalledAfterPerform(uint256 randomRequestId)
+        public
+        raffleEntered
+        skipFork
+    {
         vm.expectRevert(VRFCoordinatorV2_5Mock.InvalidRequest.selector);
         VRFCoordinatorV2_5Mock(vrfCoordinator).fulfillRandomWords(randomRequestId, address(raffle));
     }
@@ -166,7 +169,7 @@ contract RaffleTest is Test {
         uint256 startingIndex = 1;
         address expectedWinner = address(1);
 
-        for (uint i = startingIndex; i < startingIndex + additionalEntrants; i++) {
+        for (uint256 i = startingIndex; i < startingIndex + additionalEntrants; i++) {
             address newPlayer = address(uint160(i));
             hoax(newPlayer, 1 ether);
             raffle.enterRaffle{value: entranceFee}();
